@@ -26,8 +26,7 @@ It analyses the stream **received from the RTPengine relay** (`src 10.100.0.11`)
 i.e. downstream of the impaired leg — the realistic measurement point.
 
 ## Dependency-light
-Pure **standard library + numpy** (already on the host). pcap/IP/UDP/RTP are parsed
-by hand; the model is a small numpy softmax classifier (`softmax_model.py`). No
+The model is a small numpy softmax classifier (`softmax_model.py`). No
 scikit-learn / dpkt / Docker downloads required.
 
 ## Files
@@ -45,7 +44,6 @@ model.npz          trained model (after training)
 bash scripts/rtp-dataset.sh          # 1) generate labelled data over 5G (tc netem+tbf)
 bash scripts/rtp-train.sh            # 2) extract features + train + evaluate (host python3)
 cd ml && python3 predict.py data/congestion.pcap    # 3) classify + get mitigation
-bash scripts/dbg-pcap.sh             # (debug) per-pcap link/RTP/direction breakdown
 ```
 
 ## Labels come free
@@ -54,15 +52,7 @@ bash scripts/dbg-pcap.sh             # (debug) per-pcap link/RTP/direction break
 and captures at the callee — no manual annotation. Establishing the call *before*
 applying the impairment keeps SIP setup clean.
 
-## Result (72 windows, 24/class)
-Held-out accuracy ≈ 0.76; **congestion vs radio is cleanly separated** (the decision
-that matters): congestion 23/24 and radio 20/24 windows classified correctly, with no
-congestion↔radio cross-confusion. Residual error is `clean`↔`radio` (mild 7% bursty
-loss looks near-healthy) — improve by capturing more/stronger scenarios or widening
-the window. Top features: `jitter_max_ms`, `kbps`, `pps`, `reorder_rate`,
-`burst_mean_len`, `owd_range_ms`.
 
 ## Where it plugs in
 This is the classifier from the QoS-mitigation discussion: its output selects the
-actuator — **add FEC** (radio) vs **reduce rate** (congestion). Pair it with RAN
-metrics (HARQ/BLER) for a ground-truth radio-loss label when available.
+actuator — **add FEC** (radio) vs **reduce rate** (congestion). 
