@@ -1,0 +1,320 @@
+# Reproducible 5G SA setup: Open5GS core + OAI RAN (gNB + 2x nr-UE, RF simulator)
+# plus a SIP UAS/UAC pair that proves SIP signalling over the 5G user plane.
+#
+#   core net  (192.168.70.0/24): mongo + all Open5GS NFs + gNB + UEs
+#   data net  (10.100.0.0/24):   UPF N6 egress + SIP server (NOT reachable by
+#                                UEs except through the UPF / 5G data plane)
+#
+# See README.md for bring-up and verification steps.
+
+name: open5gs-oai-5g
+
+x-o5gs: &o5gs
+  image: gradiant/open5gs:${OPEN5GS_TAG}
+  restart: unless-stopped
+
+networks:
+  core:
+    name: o5gs-core
+    ipam:
+      config:
+        - subnet: 192.168.70.0/24
+  datanet:
+    name: o5gs-datanet
+    ipam:
+      config:
+        - subnet: 10.100.0.0/24
+
+services:
+  # ------------------------------------------------------------------ DB
+  mongo:
+    image: mongo:${MONGO_TAG}
+    container_name: mongo
+    command: ["mongod", "--bind_ip_all"]
+    volumes:
+      - mongodata:/data/db
+    networks:
+      core:
+        ipv4_address: 192.168.70.10
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ---------------------------------------------------------- Open5GS NFs
+  nrf:
+    <<: *o5gs
+    container_name: nrf
+    entrypoint: ["open5gs-nrfd"]
+    command: ["-c", "/opt/open5gs/nrf.yaml"]
+    volumes: [./open5gs/nrf.yaml:/opt/open5gs/nrf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.11
+
+  amf:
+    <<: *o5gs
+    container_name: amf
+    depends_on: [nrf]
+    entrypoint: ["open5gs-amfd"]
+    command: ["-c", "/opt/open5gs/amf.yaml"]
+    volumes: [./open5gs/amf.yaml:/opt/open5gs/amf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.13
+
+  ausf:
+    <<: *o5gs
+    container_name: ausf
+    depends_on: [nrf]
+    entrypoint: ["open5gs-ausfd"]
+    command: ["-c", "/opt/open5gs/ausf.yaml"]
+    volumes: [./open5gs/ausf.yaml:/opt/open5gs/ausf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.14
+
+  udm:
+    <<: *o5gs
+    container_name: udm
+    depends_on: [nrf]
+    entrypoint: ["open5gs-udmd"]
+    command: ["-c", "/opt/open5gs/udm.yaml"]
+    volumes: [./open5gs/udm.yaml:/opt/open5gs/udm.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.15
+
+  udr:
+    <<: *o5gs
+    container_name: udr
+    depends_on:
+      mongo:
+        condition: service_healthy
+      nrf:
+        condition: service_started
+    entrypoint: ["open5gs-udrd"]
+    command: ["-c", "/opt/open5gs/udr.yaml"]
+    volumes: [./open5gs/udr.yaml:/opt/open5gs/udr.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.16
+
+  pcf:
+    <<: *o5gs
+    container_name: pcf
+    depends_on:
+      mongo:
+        condition: service_healthy
+      nrf:
+        condition: service_started
+    entrypoint: ["open5gs-pcfd"]
+    command: ["-c", "/opt/open5gs/pcf.yaml"]
+    volumes: [./open5gs/pcf.yaml:/opt/open5gs/pcf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.17
+
+  bsf:
+    <<: *o5gs
+    container_name: bsf
+    depends_on:
+      mongo:
+        condition: service_healthy
+      nrf:
+        condition: service_started
+    entrypoint: ["open5gs-bsfd"]
+    command: ["-c", "/opt/open5gs/bsf.yaml"]
+    volumes: [./open5gs/bsf.yaml:/opt/open5gs/bsf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.18
+
+  nssf:
+    <<: *o5gs
+    container_name: nssf
+    depends_on: [nrf]
+    entrypoint: ["open5gs-nssfd"]
+    command: ["-c", "/opt/open5gs/nssf.yaml"]
+    volumes: [./open5gs/nssf.yaml:/opt/open5gs/nssf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.19
+
+  smf:
+    <<: *o5gs
+    container_name: smf
+    depends_on: [nrf, upf]
+    entrypoint: ["open5gs-smfd"]
+    command: ["-c", "/opt/open5gs/smf.yaml"]
+    volumes: [./open5gs/smf.yaml:/opt/open5gs/smf.yaml:ro]
+    networks:
+      core:
+        ipv4_address: 192.168.70.20
+
+  upf:
+    <<: *o5gs
+    container_name: upf
+    depends_on: [nrf]
+    user: "0"
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.ip_forward: 1
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes: [./open5gs/upf.yaml:/opt/open5gs/upf.yaml:ro]
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        ip tuntap add name ogstun mode tun 2>/dev/null || true
+        ip addr add 10.45.0.1/16 dev ogstun 2>/dev/null || true
+        ip link set ogstun up
+        iptables -t nat -C POSTROUTING -s 10.45.0.0/16 ! -o ogstun -j MASQUERADE 2>/dev/null \
+          || iptables -t nat -A POSTROUTING -s 10.45.0.0/16 ! -o ogstun -j MASQUERADE
+        exec open5gs-upfd -c /opt/open5gs/upf.yaml
+    networks:
+      core:
+        ipv4_address: 192.168.70.21
+      datanet:
+        ipv4_address: 10.100.0.2
+
+  # ----------------------------------------------- subscriber provisioning
+  dbctl:
+    image: gradiant/open5gs-dbctl:${DBCTL_TAG}
+    container_name: dbctl
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      DB_URI: mongodb://mongo/open5gs
+    volumes:
+      - ./dbctl/add-subscribers.sh:/add-subscribers.sh:ro
+    entrypoint: ["/bin/bash", "/add-subscribers.sh"]
+    restart: "no"
+    networks:
+      core:
+
+  # ------------------------------------------------------------- OAI gNB
+  oai-gnb:
+    image: oaisoftwarealliance/oai-gnb:${OAI_TAG}
+    container_name: oai-gnb
+    depends_on:
+      amf:
+        condition: service_started
+      upf:
+        condition: service_started
+      dbctl:
+        condition: service_completed_successfully
+    cap_add: [NET_ADMIN, SYS_NICE]
+    security_opt: [seccomp:unconfined]
+    ulimits:
+      rtprio: 99
+      memlock: -1
+    environment:
+      USE_ADDITIONAL_OPTIONS: >-
+        --rfsim --rfsimulator.serveraddr server
+        --log_config.global_log_options level,nocolor,time
+    volumes:
+      - ./oai/gnb.conf:/opt/oai-gnb/etc/gnb.conf:ro
+    networks:
+      core:
+        ipv4_address: 192.168.70.30
+
+  # --------------------------------------------------------- OAI nr-UE #1
+  oai-nr-ue-1:
+    image: oaisoftwarealliance/oai-nr-ue:${OAI_TAG}
+    container_name: oai-nr-ue-1
+    depends_on: [oai-gnb]
+    cap_add: [NET_ADMIN, SYS_NICE]
+    security_opt: [seccomp:unconfined]
+    ulimits:
+      rtprio: 99
+      memlock: -1
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./oai/nr-ue.conf:/opt/oai-nr-ue/etc/nr-ue.conf:ro
+    environment:
+      USE_ADDITIONAL_OPTIONS: >-
+        --rfsim -r 106 --numerology 1 --band 78 -C 3319680000 --ssb 516
+        --rfsimulator.serveraddr 192.168.70.30
+        --uicc0.imsi ${UE1_IMSI} --uicc0.nssai_sst ${SST} --uicc0.dnn ${DNN}
+        --log_config.global_log_options level,nocolor,time
+    networks:
+      core:
+        ipv4_address: 192.168.70.31
+
+  # --------------------------------------------------------- OAI nr-UE #2
+  oai-nr-ue-2:
+    image: oaisoftwarealliance/oai-nr-ue:${OAI_TAG}
+    container_name: oai-nr-ue-2
+    depends_on: [oai-gnb]
+    cap_add: [NET_ADMIN, SYS_NICE]
+    security_opt: [seccomp:unconfined]
+    ulimits:
+      rtprio: 99
+      memlock: -1
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./oai/nr-ue.conf:/opt/oai-nr-ue/etc/nr-ue.conf:ro
+    environment:
+      USE_ADDITIONAL_OPTIONS: >-
+        --rfsim -r 106 --numerology 1 --band 78 -C 3319680000 --ssb 516
+        --rfsimulator.serveraddr 192.168.70.30
+        --uicc0.imsi ${UE2_IMSI} --uicc0.nssai_sst ${SST} --uicc0.dnn ${DNN}
+        --log_config.global_log_options level,nocolor,time
+    networks:
+      core:
+        ipv4_address: 192.168.70.32
+
+  # -------------------------------------------------------- SIP UAS server
+  # Lives only on the data network; UEs can reach it ONLY via the UPF (N6),
+  # so any SIP that arrives here has traversed the 5G data plane.
+  sip-server:
+    build: ./sip
+    image: sip-tester:local
+    container_name: sip-server
+    environment:
+      BIND_IP: 10.100.0.5
+      SIP_PORT: "5060"
+    entrypoint: ["/opt/sip/run-server.sh"]
+    networks:
+      datanet:
+        ipv4_address: 10.100.0.5
+
+  # ------------------------------------------------- SIP UAC (from UE #1)
+  sip-client-1:
+    image: sip-tester:local
+    container_name: sip-client-1
+    depends_on: [sip-server, oai-nr-ue-1]
+    cap_add: [NET_ADMIN]
+    network_mode: "service:oai-nr-ue-1"
+    environment:
+      UE_IFACE: oaitun_ue1
+      SIP_SERVER: 10.100.0.5:5060
+      SERVER_NET: 10.100.0.0/24
+      CALLS: "10"
+      RATE: "1"
+    entrypoint: ["/opt/sip/run-client.sh"]
+
+  # ------------------------------------------------- SIP UAC (from UE #2)
+  sip-client-2:
+    image: sip-tester:local
+    container_name: sip-client-2
+    depends_on: [sip-server, oai-nr-ue-2]
+    cap_add: [NET_ADMIN]
+    network_mode: "service:oai-nr-ue-2"
+    environment:
+      UE_IFACE: oaitun_ue1
+      SIP_SERVER: 10.100.0.5:5060
+      SERVER_NET: 10.100.0.0/24
+      CALLS: "10"
+      RATE: "1"
+    entrypoint: ["/opt/sip/run-client.sh"]
+
+volumes:
+  mongodata:

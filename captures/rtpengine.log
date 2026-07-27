@@ -1,0 +1,16 @@
+[1785163613.298573] INFO: [crypto] Generating new DTLS certificate
+[1785163613.545194] INFO: [core] Startup complete, version 9.4.0.0+0~mr9.4.0.0 git-master-1393dbfc
+[1785163735.536782] INFO: [control] Received command 'ping' from 10.100.0.10:56420
+[1785163735.536900] INFO: [control] Replying to 'ping' from 10.100.0.10:56420 (elapsed time 0.000001 sec)
+[1785163735.537951] INFO: [JNqMVM2aVT]: [control] Received command 'offer' from 10.100.0.10:56420
+[1785163735.538257] NOTICE: [JNqMVM2aVT]: [core] Creating new call
+[1785163735.541409] INFO: [JNqMVM2aVT]: [control] Replying to 'offer' from 10.100.0.10:56420 (elapsed time 0.003284 sec)
+[1785163737.618828] INFO: [JNqMVM2aVT]: [control] Received command 'answer' from 10.100.0.10:56369
+[1785163737.621404] INFO: [JNqMVM2aVT]: [control] Replying to 'answer' from 10.100.0.10:56369 (elapsed time 0.002469 sec)
+[1785163741.010804] INFO: [JNqMVM2aVT port 30000]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785163741.023764] INFO: [JNqMVM2aVT port 30010]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785163741.677909] INFO: [JNqMVM2aVT port 30001]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785163742.857192] INFO: [JNqMVM2aVT port 30011]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785163758.077147] INFO: [JNqMVM2aVT]: [control] Received command 'delete' from 10.100.0.10:36759
+[1785163758.078465] INFO: [JNqMVM2aVT]: [core] Scheduling deletion of call branch 'B2~6TLN5w' (via-branch '') in 30 seconds
+[1785163758.078606] INFO: [JNqMVM2aVT]: [control] Replying to 'delete' from 10.100.0.10:36759 (elapsed time 0.001335 sec)

@@ -1,0 +1,31 @@
+# baresip v1.0.0 config — headless container, aufile audio, ctrl_tcp control
+
+# Where the .so modules live in the Ubuntu package
+module_path		/usr/lib/baresip/modules
+
+# SIP listen (overridden at runtime by run script to bind to UE tunnel IP)
+sip_listen		0.0.0.0:5080
+
+# Audio: use aufile (no soundcard needed). Source file set via -p flag at runtime.
+audio_player		aufile,/opt/test.wav
+audio_source		aufile,/opt/test.wav
+audio_alert		aufile,/opt/test.wav
+
+# Codecs — g711 is always present
+audio_codecs		G711
+
+# TCP control socket: commands sent via: echo "/dial sip:ue1@..." | nc 127.0.0.1 4444
+ctrl_tcp_listen		0.0.0.0:4444
+
+# NOTE: auto-answer is set per-account via ;answermode=auto (see run-baresip.sh)
+
+# Modules to load (order matters — accounts before menu)
+module			g711.so
+module			aufile.so
+module			stdio.so
+module			stun.so
+module			natpmp.so
+module			ctrl_tcp.so
+module			account.so
+module			menu.so
+module			uuid.so

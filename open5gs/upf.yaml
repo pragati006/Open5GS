@@ -1,0 +1,16 @@
+logger:
+  level: info
+
+upf:
+  pfcp:
+    server:
+      - address: 0.0.0.0
+        advertise: 192.168.70.21
+  gtpu:
+    server:
+      - address: 0.0.0.0
+        advertise: 192.168.70.21
+  session:
+    - subnet: 10.45.0.0/16
+      gateway: 10.45.0.1
+      dnn: internet

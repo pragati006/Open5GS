@@ -1,0 +1,104 @@
+# OTT SIP voice service overlay — run on top of the base 5G stack.
+#
+# Usage:
+#   docker compose -f docker-compose.yaml -f docker-compose.sip.yaml up -d
+#
+# Services added:
+#   kamailio   – SIP registrar + proxy (data net 10.100.0.10)
+#   rtpengine  – RTP media relay     (data net 10.100.0.11)
+#   baresip-ue1 – SIP UA in oai-nr-ue-1 netns  (callee, auto-answer)
+#   baresip-ue2 – SIP UA in oai-nr-ue-2 netns  (caller, dials ue1 after register)
+
+name: open5gs-oai-5g
+
+services:
+
+  # ---------------------------------------------------------- Kamailio
+  kamailio:
+    build: ./voip/kamailio
+    image: kamailio-ott:local
+    container_name: kamailio
+    restart: unless-stopped
+    cap_add: [NET_ADMIN]
+    volumes:
+      - ./voip/kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg:ro
+    networks:
+      datanet:
+        ipv4_address: 10.100.0.10
+    healthcheck:
+      test: ["CMD", "nc", "-zu", "10.100.0.10", "5060"]
+      interval: 5s
+      retries: 12
+
+  # -------------------------------------------------------- RTPengine
+  rtpengine:
+    image: drachtio/rtpengine:latest
+    container_name: rtpengine
+    restart: unless-stopped
+    cap_add: [NET_ADMIN, SYS_NICE]
+    networks:
+      datanet:
+        ipv4_address: 10.100.0.11
+    # Bypass the image entrypoint (it sed-edits a config file). Run rtpengine
+    # directly in pure userspace mode (--table=-1 => no kernel module, works in WSL).
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export PATH=/usr/local/bin:/usr/bin:/usr/sbin:$$PATH
+        exec rtpengine \
+          --table=-1 \
+          --interface=10.100.0.11 \
+          --listen-ng=10.100.0.11:22222 \
+          --port-min=30000 --port-max=31000 \
+          --log-level=6 --log-stderr=true --foreground
+    depends_on:
+      kamailio:
+        condition: service_started
+
+  # -------------------------------------- baresip in UE-1 netns (callee)
+  baresip-ue1:
+    build: ./voip/baresip
+    image: baresip-ott:local
+    container_name: baresip-ue1
+    restart: "no"
+    cap_add: [NET_ADMIN]
+    network_mode: "service:oai-nr-ue-1"
+    environment:
+      SIP_USER: ue1
+      SIP_PASS: secret1
+      SIP_DOMAIN: "10.100.0.10"
+      UE_IFACE: oaitun_ue1
+      PEER_URI: ""
+    depends_on:
+      kamailio:
+        condition: service_healthy
+      oai-nr-ue-1:
+        condition: service_started
+      rtpengine:
+        condition: service_started
+
+  # -------------------------------------- baresip in UE-2 netns (caller)
+  baresip-ue2:
+    build: ./voip/baresip
+    image: baresip-ott:local
+    container_name: baresip-ue2
+    restart: "no"
+    cap_add: [NET_ADMIN]
+    network_mode: "service:oai-nr-ue-2"
+    environment:
+      SIP_USER: ue2
+      SIP_PASS: secret2
+      SIP_DOMAIN: "10.100.0.10"
+      UE_IFACE: oaitun_ue1
+      PEER_URI: "sip:ue1@10.100.0.10"
+      CALL_WAIT: "20"
+    depends_on:
+      kamailio:
+        condition: service_healthy
+      baresip-ue1:
+        condition: service_started
+      oai-nr-ue-2:
+        condition: service_started
+      rtpengine:
+        condition: service_started

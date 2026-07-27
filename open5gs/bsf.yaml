@@ -1,0 +1,14 @@
+db_uri: mongodb://mongo/open5gs
+
+logger:
+  level: info
+
+bsf:
+  sbi:
+    server:
+      - address: 0.0.0.0
+        port: 7777
+        advertise: bsf
+    client:
+      nrf:
+        - uri: http://nrf:7777
