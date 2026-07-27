@@ -29,10 +29,10 @@ sleep 2
 # -------------------------------------------------------------------
 # Start Kamailio and RTPengine log capture
 # -------------------------------------------------------------------
-docker logs -f kamailio > captures/kamailio.log 2>&1 &
+docker logs -f kamailio > logs/kamailio.log 2>&1 &
 KAM_LOG_PID=$!
 
-docker logs -f rtpengine > captures/rtpengine.log 2>&1 &
+docker logs -f rtpengine > logs/rtpengine.log 2>&1 &
 RTP_LOG_PID=$!
 
 # -------------------------------------------------------------------
@@ -138,9 +138,8 @@ docker run --rm \
 
 echo
 echo "Artifacts saved:"
-echo "  captures/live-voice-over-5g.wav"
-echo "  captures/kamailio.log"
-echo "  captures/rtpengine.log"
+echo "  logs/kamailio.log"
+echo "  logs/rtpengine.log"
 
 docker cp phone-ue2:/tmp/rtp.pcap captures/rtp.pcap >/dev/null 2>&1 || true
 echo "  captures/rtp.pcap"
