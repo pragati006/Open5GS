@@ -1,0 +1,43 @@
+[1785186634.804584] INFO: [crypto] Generating new DTLS certificate
+[1785186634.983428] INFO: [core] Startup complete, version 9.4.0.0+0~mr9.4.0.0 git-master-1393dbfc
+[1785186670.921730] INFO: [control] Received command 'ping' from 10.100.0.10:43866
+[1785186670.921895] INFO: [control] Replying to 'ping' from 10.100.0.10:43866 (elapsed time 0.000001 sec)
+[1785186670.922941] INFO: [60G5ohQ39k]: [control] Received command 'offer' from 10.100.0.10:43866
+[1785186670.923180] NOTICE: [60G5ohQ39k]: [core] Creating new call
+[1785186670.924121] INFO: [60G5ohQ39k]: [control] Replying to 'offer' from 10.100.0.10:43866 (elapsed time 0.001112 sec)
+[1785186672.996503] INFO: [60G5ohQ39k]: [control] Received command 'answer' from 10.100.0.10:57159
+[1785186672.997050] INFO: [60G5ohQ39k]: [control] Replying to 'answer' from 10.100.0.10:57159 (elapsed time 0.000420 sec)
+[1785186676.002260] INFO: [60G5ohQ39k port 30023]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785186676.002397] INFO: [60G5ohQ39k port 30022]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785186676.060468] INFO: [60G5ohQ39k port 30000]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785186676.813455] INFO: [60G5ohQ39k port 30023]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785186677.168016] INFO: [60G5ohQ39k port 30001]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785186693.349840] INFO: [60G5ohQ39k]: [control] Received command 'delete' from 10.100.0.10:60409
+[1785186693.350301] INFO: [60G5ohQ39k]: [core] Scheduling deletion of call branch 'F3tzt-wzu' (via-branch '') in 30 seconds
+[1785186693.350365] INFO: [60G5ohQ39k]: [control] Replying to 'delete' from 10.100.0.10:60409 (elapsed time 0.000383 sec)
+[1785186723.000182] INFO: [60G5ohQ39k]: [core] Call branch 'F3tzt-wzu' (via-branch '') deleted, no more branches remaining
+[1785186723.000257] INFO: [60G5ohQ39k]: [core] Final packet stats:
+[1785186723.000268] INFO: [60G5ohQ39k]: [core] --- Tag 'F3tzt-wzu', created 0:53 ago for branch '', in dialogue with 'G3zjbuB'
+[1785186723.000282] INFO: [60G5ohQ39k]: [core] ------ Media #1 (audio over RTP/AVP) using opus/48000/2
+[1785186723.000296] INFO: [60G5ohQ39k]: [core] --------- Port     10.100.0.11:30022 <>      10.100.0.2:7078 , SSRC 94a876de, 622 p, 23477 b, 0 e, 30 ts
+[1785186723.000305] INFO: [60G5ohQ39k]: [core] --------- Port     10.100.0.11:30023 <>      10.100.0.2:7079  (RTCP), SSRC 94a876de, 20 p, 2104 b, 0 e, 37 ts
+[1785186723.000311] INFO: [60G5ohQ39k]: [core] --- Tag 'G3zjbuB', created 0:53 ago for branch '', in dialogue with 'F3tzt-wzu'
+[1785186723.000318] INFO: [60G5ohQ39k]: [core] ------ Media #1 (audio over RTP/AVP) using opus/48000/2
+[1785186723.000326] INFO: [60G5ohQ39k]: [core] --------- Port     10.100.0.11:30000 <>      10.100.0.2:7078 , SSRC 8f2ac90c, 627 p, 23520 b, 0 e, 30 ts
+[1785186723.000334] INFO: [60G5ohQ39k]: [core] --------- Port     10.100.0.11:30001 <>      10.100.0.2:7079  (RTCP), SSRC 8f2ac90c, 18 p, 2064 b, 0 e, 32 ts
+[1785186723.000340] INFO: [60G5ohQ39k]: [core] --- SSRC 94a876de
+[1785186723.000347] INFO: [60G5ohQ39k]: [core] ------ Average MOS 4.3, lowest MOS 4.3 (at 0:06), highest MOS 4.3 (at 0:06)
+[1785186723.000351] INFO: [60G5ohQ39k]: [core] --- SSRC 8f2ac90c
+[1785186723.000358] INFO: [60G5ohQ39k]: [core] ------ Average MOS 4.2, lowest MOS 4.2 (at 0:20), highest MOS 4.3 (at 0:06)
+[1785186754.698192] INFO: [AMZwkDpU5~]: [control] Received command 'offer' from 10.100.0.10:60409
+[1785186754.698348] NOTICE: [AMZwkDpU5~]: [core] Creating new call
+[1785186754.699273] INFO: [AMZwkDpU5~]: [control] Replying to 'offer' from 10.100.0.10:60409 (elapsed time 0.000998 sec)
+[1785186755.996601] INFO: [AMZwkDpU5~]: [control] Received command 'answer' from 10.100.0.10:48332
+[1785186755.997880] INFO: [AMZwkDpU5~]: [control] Replying to 'answer' from 10.100.0.10:48332 (elapsed time 0.001112 sec)
+[1785186759.073996] INFO: [AMZwkDpU5~ port 30034]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785186759.119460] INFO: [AMZwkDpU5~ port 30056]: [core] Confirmed peer address as 10.100.0.2:7078
+[1785186759.120551] INFO: [AMZwkDpU5~ port 30057]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785186759.916592] INFO: [AMZwkDpU5~ port 30035]: [core] Confirmed peer address as 10.100.0.2:7079
+[1785186777.638549] INFO: [AMZwkDpU5~]: [control] Received command 'delete' from 10.100.0.10:48332
+[1785186777.639490] INFO: [AMZwkDpU5~]: [core] Scheduling deletion of call branch '4hEyLwT8d' (via-branch '') in 30 seconds
+[1785186777.639574] INFO: [AMZwkDpU5~]: [control] Replying to 'delete' from 10.100.0.10:48332 (elapsed time 0.000892 sec)
