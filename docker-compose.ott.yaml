@@ -103,7 +103,7 @@ services:
     depends_on:
       kamailio:
         condition: service_healthy
-      oai-nr-ue-1:
+      oai-nr-ue-2:
         condition: service_started
     entrypoint: ["bash", "/run-linphone2.sh"]
     environment:
